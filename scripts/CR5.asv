@@ -1,0 +1,154 @@
+
+close all
+clear all
+
+user = '\\blinklab\Data0\users\Sudha\Data\Dec2022';
+mice={'SS001','SS002','SS003','SS004','SS005','SS006','SS007','SS008'};
+
+alldays1={'221205','221206','221207','221208','221209','221212','221213','221214','221215','221216','221220','221221','221222','221227','221228','221229','221230','230103','230104','230109','230110','230111','230112','230113','230117','230118'};
+alldays2={'221205','221206','221207','221208','221209','221212','221213','221214','221215','221216','221220','221221','221222','221227','221228','221229','221230','230103','230104','230109','230110','230111','230112','230113','230118'};
+
+[x,y]=CalibrationData;
+database=[];allfec=[];
+for ii= 1:length(mice)
+    mouse = mice{ii};
+    if ii<5
+        alldays=alldays2;
+    else
+        alldays=alldays1;
+    end
+    for jj=3:length(alldays)
+        clearvars -except ii mouse jj alldays1 alldays2 alldays mice user database x y allfec
+        db=[];
+
+        day=alldays{jj};
+        folder2 = fullfile(user, mouse, day);
+        cd(folder2)
+        load trialdata.mat
+
+
+        db(:,3)=trials.c_csnum;
+        fec=trials.eyelidpos_1;
+        allfec=[allfec; fec];
+        db(:,4)=trials.c_usdur;
+
+        for uu=1:length(trials.c_usdur)
+            isi(uu)=trials.camtime(1,uu).time(2);
+        end
+        db(:,5)=isi;
+
+        pre = 1:tm2frm(0.1);
+        win=[];
+        for i=1:length(trials.c_isi)
+            win(i,:) = tm2frm(0.2+trials.c_isi(i)/1e3):tm2frm(0.2+trials.c_isi(i)/1e3+0.015);
+        end
+
+        CRamp_1 = NaN(1,length(trials.c_csnum));
+        for i=1:length(trials.c_csnum)
+            CRamp_1(i) = (max(trials.eyelidpos_1(i,win(i,:))) - mean(trials.eyelidpos_1(i,pre),2));%/(1-mean(trials.eyelidpos_1(alltrials(i),pre),2));
+        end
+
+
+
+        CRampclean(CRamp_1<0.2)=0;
+        CRampclean(CRamp_1>=0.2)=1;
+        CRampclean=CRampclean';
+        db(:,6)=CRamp_1;
+        db(:,7)=CRampclean;
+        %         [db]=VoltoDB(x,y,trials.c_csinten(1));
+        %         db(:,8)=
+
+        db(:,1)=ii;
+        db(:,2)=jj;
+        database=[database; db];
+        
+    end
+end
+database=database;
+indices=find(database(:,4)~=0);
+database(indices,5)=database(indices,5)-25;
+
+database=[database allfec];
+clearvars -except allfec database
+
+
+
+%         CRpercent(1)=100*sum(CRampclean(alltrials{1}))/length(CRamp_1(alltrials{1}));%CRpercent_1_paired_light
+%         CRpercent(2)=100*sum(CRampclean(alltrials{2}))/length(CRamp_1(alltrials{2}));%CRpercent_1_paired_tone
+%         CRpercent(3)=100*sum(CRampclean(alltrials{3}))/length(CRamp_1(alltrials{3}));%CRpercent_1_test_light
+%         CRpercent(4)=100*sum(CRampclean(alltrials{4}))/length(CRamp_1(alltrials{4}));%CRpercent_1_test_tone
+%
+%         CRtrials{1,jj-start+1} = trials.eyelidpos_1(alltrials{1},:);%CRtrials_1_paired_light
+%         CRtrials{2,jj-start+1} = trials.eyelidpos_1(alltrials{2},:);%CRtrials_1_paired_tone
+%         CRtrials{3,jj-start+1} = trials.eyelidpos_1(alltrials{3},:);%CRtrials_1_test_light
+%         CRtrials{4,jj-start+1} = trials.eyelidpos_1(alltrials{4},:);%CRtrials_1_test_tone
+%
+% % if ~isempty(CRampclean(alltrials{3}))
+% %         CRtrials{3,jj-start+1} = led(sum(CRampclean(alltrials{3}).*led,2)~=0,:);%CRtrials_1_test_light
+% % end
+% % if ~isempty(CRampclean(alltrials{4}))
+% %         CRtrials{4,jj-start+1} = tone(sum(CRampclean(alltrials{4}).*tone,2)~=0,:);%CRtrials_1_test_tone
+% % end
+%
+%         allitis=[allitis trials.ITIs'];
+%
+%         for_xticks(1,jj-start+1)=lentrials(1);%% no of light trials
+%         for_xticks(2,jj-start+1)=lentrials(2);%% no of tone trials
+%         alltesttrials{3,jj-start+1}=lentrials(1);
+%         alltesttrials{4,jj-start+1}=lentrials(2);
+%
+%         subplot(2,1,1),plot([lentrials(1) lentrials(1)],[-0.2 1.2],'-k')
+%         text(lentrials(1)-30,1,strcat(num2str(round(CRpercent(1))),'%'))
+%         text(lentrials(1)-50,1.1,strcat('Day',num2str(jj)))
+%         hold on
+%
+%         subplot(2,1,2),plot([lentrials(2) lentrials(2)],[-0.2 1.2],'-k')
+%         text(lentrials(2)-30,1,strcat(num2str(round(CRpercent(2))),'%'))
+%         text(lentrials(2)-50,1.1,strcat('Day',num2str(jj)))
+%         hold on
+%
+%     end
+%     for io=1:size(alltesttrials,2)
+%         if ~isempty(alltesttrials{1,io})
+%             alltesttrials{1,io}=(alltesttrials{1,io}+alltesttrials{3,io-1})';
+%         end
+%
+%         if ~isempty(alltesttrials{2,io})
+%             alltesttrials{2,io}=(alltesttrials{2,io}+alltesttrials{4,io-1})';
+%         end
+%     end
+%     alltesttrials2{1}=[alltesttrials{1,:}];
+%     alltesttrials2{2}=[alltesttrials{2,:}];
+%
+%     subplot(2,1,1),plot(1:length(megaCR{1}),megaCR{1},'.b','MarkerSize',10)
+%     hold on
+%     subplot(2,1,1),plot(alltesttrials2{1},megaCR{3},'*g','MarkerSize',10)
+%
+%     subplot(2,1,1),plot(find(megaCR{1}>0.2),megaCR{1}(megaCR{1}>0.2),'.r','MarkerSize',10)
+%
+%     title(strcat('LED-',num2str(isi(1,2)-25),' isi'))
+%     ylabel('CR amplitude')
+%     xlabel('Trial no')
+%     ylim([-0.2 1.2])
+%     xticks(for_xticks(1,:))
+%
+%
+%     subplot(2,1,2),plot(1:length(megaCR{2}),megaCR{2},'.b','MarkerSize',10)
+%     hold on
+%     subplot(2,1,2),plot(alltesttrials2{2},megaCR{4},'*g','MarkerSize',10)
+%     subplot(2,1,2),plot(find(megaCR{2}>0.2),megaCR{2}(megaCR{2}>0.2),'.r','MarkerSize',10)
+%     title(strcat('Tone-',num2str(isi(2,2)-25),' isi'))
+%     ylabel('CR amplitude')
+%     xlabel('Trial no')
+%     ylim([-0.2 1.2])
+%     xticks(for_xticks(2,:))
+%
+%     cd('C:\Users\u239632\Desktop\figs')
+%     mouse1=strcat(mouse,' CR amplitudes');
+%     sgtitle(mouse1, 'FontSize',20)
+%     saveas(gcf,mouse1,'png')
+%
+% %         CRs2(isi,CRtrials,mouse,ii)
+% end
+%
+%
