@@ -4,7 +4,7 @@ user = '\\blinklab\Data0\users\Sudha\Data\Dec2022';
 % user = 'C:\Users\u239632\Documents\JML\data';
 mice={'SS001','SS002','SS003','SS004','SS005','SS006','SS007','SS008'};
 
-alldays={'230321'};
+alldays={'230322'};
 % mice={'testing'};
 % alldays={'subtest'};
 for ii= 1:length(mice)

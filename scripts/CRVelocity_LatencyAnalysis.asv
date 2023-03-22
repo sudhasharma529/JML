@@ -17,7 +17,7 @@ for ii=8%[5,7,8]
         daysbef=26:30;
     end
     daysaft=44:49;
-    daysaftaft=max(database(:,2)):max(database(:,2))-5;
+    daysaftaft=max(database(:,2))-5:max(database(:,2));
 
     ledtrials=database(database(:,1)==ii & database(:,3)==7 & database(:,7)~=0,:);
     tonetrials=database(database(:,1)==ii & database(:,3)==5 & database(:,7)~=0,:);
@@ -33,7 +33,7 @@ for ii=8%[5,7,8]
     [slps_aft,crlatency_aft,crlatency_aft_greg,select_traces]=Calculate_LatencyandVelocity(aft);
     traces_aft=select_traces(nonzeros(crlatency_aft),:);
     [slps_aftaft,crlatency_aftaft,crlatency_aftaft_greg,select_traces]=Calculate_LatencyandVelocity(aftaft);
-    traces_aft=select_traces(nonzeros(crlatency_aft),:);
+    traces_aftaft=select_traces(nonzeros(crlatency_aftaft),:);
 
     
     myboxplot(nonzeros(slps_bef),nonzeros(slps_aft))
@@ -55,6 +55,17 @@ for ii=8%[5,7,8]
     saveas(gcf,mouse,'png')
 
 
+    myboxplot(nonzeros(crlatency_aft),nonzeros(crlatency_aftaft))
+
+    ylabel('CR Latency')
+    xticklabels({'After tone(200msISI) removal','After reintroducetone(200msISI) removal'})
+    sgtitle(strcat('SS00',num2str(ii),' CR Latency to','-LED(600msISI)'))
+    mouse=strcat('SS00',num2str(ii),'CR Latency aft aft','-LED(600msISI)');
+    cd('C:\Users\u239632\Documents\JML\results')
+    saveas(gcf,mouse,'png')
+
+
+
     figure
 
     m1=traces_bef-mean(traces_bef(:,30:40),2);
@@ -62,11 +73,9 @@ for ii=8%[5,7,8]
     hold on
     m2=traces_aft-mean(traces_aft(:,30:40),2);
     subplot(2,2,1),plot(mean(m2,1))
-
-    m3=mean(m1,1);m4=mean(m2,1);
-    subplot(2,2,2),plot(m3(160-70:160+20))
-    hold on
-    plot(m4(160-70:160+20))
+    m3=traces_aftaft-mean(traces_aftaft(:,30:40),2);
+    subplot(2,2,1),plot(mean(m3,1))
+    
 
 
 end
@@ -77,53 +86,27 @@ end
 
 
 
-% close all
-% load('Database_031523.mat')
-% for ii=[5,7,8]
-%     figure('units','normalized','outerposition',[0.5 0.5 0.3 0.3])
-%     allonsets=[];db=[];
-%     clearvars -except database ii nn allonsets
-%     newdb=[];newdb_led=[];newdb_tone=[];
-%     newdb=database(database(:,1)==ii & database(:,2)>0,:);
-%     newdb_led=newdb(newdb(:,3)==7,:);
-%     newdb_tone=newdb(newdb(:,3)==5,:);
-%
-%     days=unique(newdb_led(:,2));
-%     for pp=1:length(days)
-%
-%         ledtrials=[];fec=[];ISI=[];onsets=[];newonsets=[];
-%         ledtrials=newdb_led(newdb_led(:,2)==days(pp), :);
-%
-%         bf=ledtrials(:,51:170)-mean(ledtrials(:,40:50),2);
-%         nn=1;slps_bef=[];
-%         for ll=1:size(bf,1)
-%             xx=[];bf2=[];
-%             [V,I]=max(bf(ll,:));bf2=bf(ll,1:I);
-%             if length(bf2)>20
-%                 xx=1:1:length(bf2);
-%                 [param,stat]=sigm_fit(xx,bf2,[],[],[]);
-%                 fit(ll)=goodnessOfFit(bf2',stat.ypred(1:length(bf2)),'MSE');
-%                 %             title(fit(ll))
-%                 %             pause
-%                 %             clf
-%                 if param(4)<0.5&param(4)>0 & fit(ll)<0.0099
-%                     slps_bef(nn)=param(4);
-%                     nn=nn+1;
-%                 end
-%             end
-%         end
-%
-%         scatter(ones(1,length(slps_bef))*pp,slps_bef,'filled','SizeData',10,'Jitter','on','JitterAmount',0.1)
-%         meds(pp)=median(nonzeros(slps_bef));
-%         hold on
-%
-%     end
-%
-%     mouse=strcat('SS00',num2str(ii),'CR Velocity to','-LED(600msISI)');
-%     plot(meds,'k','LineWidth',2)
-%     ylabel('FEC per unit time')
-%     xlabel('Day of recording')
-%     sgtitle(mouse, 'FontSize',10)
-%     cd('C:\Users\u239632\Documents\JML\results')
-%     saveas(gcf,mouse,'png')
-% end
+close all
+
+load('Database_031523.mat')
+for ii=[5,7,8]
+    clearvars -except database ii nn
+    allonsets=[];db=[];
+    days=unique(database(:,2));
+    for pp=1:length(days)
+        ledtrials=database(database(:,1)==pp & database(:,3)==7,:);
+        [slps_bef,crlatency_bef,crlatency_bef_greg,select_traces]=Calculate_LatencyandVelocity(ledtrials);
+        scatter(ones(1,length(slps_bef))*pp,slps_bef,'filled','SizeData',10,'Jitter','on','JitterAmount',0.1)
+        meds(pp)=median(nonzeros(slps_bef));
+        hold on
+
+    end
+
+    mouse=strcat('SS00',num2str(ii),'CR Velocity to','-LED(600msISI)');
+    plot(meds,'k','LineWidth',2)
+    ylabel('FEC per unit time')
+    xlabel('Day of recording')
+    sgtitle(mouse, 'FontSize',10)
+    cd('C:\Users\u239632\Documents\JML\results')
+    saveas(gcf,mouse,'png')
+end
